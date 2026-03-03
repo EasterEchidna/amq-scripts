@@ -141,8 +141,8 @@ function setupUI() {
     shortcutWindow = new AMQWindow({
         id: "amqShortcutWindow",
         title: "AMQ Shortcut+",
-        width: 580,
-        height: 480,
+        width: 750,
+        height: 700,
         minWidth: 400,
         minHeight: 300,
         zIndex: 1050,
@@ -186,10 +186,10 @@ function setupUI() {
             <!-- Import/Export row -->
             <div style="display: flex; justify-content: flex-end; gap: 5px; margin-bottom: 15px;">
                 <input type="file" id="aspImportFile" accept=".json" style="display: none;">
-                <button id="aspBtnImport" class="btn btn-info btn-sm" title="Import from Single Profile or Backup"><i class="fa fa-upload"></i> Import Profiles</button>
+                <button id="aspBtnImport" class="btn btn-info btn-sm" title="Import from Single Profile or Backup"><i class="fa fa-download"></i> Import Profiles</button>
                 <div style="display: flex; gap: 5px;">
-                    <button id="aspBtnExportCurrent" class="btn btn-info btn-sm" title="Export only the active profile (without its name)"><i class="fa fa-download"></i> Export Profile</button>
-                    <button id="aspBtnExport" class="btn btn-info btn-sm" title="Export all profiles as a full backup"><i class="fa fa-download"></i> Export All</button>
+                    <button id="aspBtnExportCurrent" class="btn btn-info btn-sm" title="Export only the active profile (without its name)"><i class="fa fa-upload"></i> Export Profile</button>
+                    <button id="aspBtnExport" class="btn btn-info btn-sm" title="Export all profiles as a full backup"><i class="fa fa-upload"></i> Export All</button>
                 </div>
             </div>
 
@@ -200,15 +200,25 @@ function setupUI() {
                 <button id="aspBtnAdd" class="btn btn-success btn-sm">Add</button>
             </div>
 
-            <!-- Profile Groups Tabs -->
-            <div id="aspGroupTabsContainer" style="display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 2px solid #555; overflow-x: auto; padding-bottom: 2px; align-items: flex-end; min-height: 35px;">
-                <!-- Tabs injected here -->
-            </div>
+            <!-- 2-Column Split: Groups on Left, Shortcuts on Right -->
+            <div style="display: flex; gap: 4px; align-items: flex-start; margin-bottom: 10px; height: 400px;">
+                
+                <!-- Left: Profile Groups Tabs Stack -->
+                <div id="aspGroupTabsContainer" style="display: flex; flex-direction: column; gap: 4px; width: ${shortcutData.settings?.groupWidth || 140}px; min-width: 100px; max-width: 400px; overflow-y: auto; overflow-x: hidden; max-height: 100%;">
+                    <!-- Fixed Add Group Button -->
+                    <div id="aspBtnNewGroup" class="asp-tab" style="display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 4px; cursor: pointer; background-color: rgba(255, 255, 255, 0.05); color: #d9d9d9; border: 1px solid #444; font-size: 14px; min-height: 33px; flex-shrink: 0;">
+                        <i class="fa fa-plus"></i>
+                    </div>
+                    <!-- Tabs injected here -->
+                </div>
 
-            <!-- Shortcut List -->
-            <div style="max-height: 400px; overflow-y: auto; overflow-x: hidden; border: 1px solid #444; border-radius: 4px; background: rgba(0, 0, 0, 0.1);">
-                <table class="table" style="color: white; table-layout: fixed; word-wrap: break-word; margin-bottom: 0;">
-                    <thead style="position: sticky; top: 0; background-color: #222; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.5);">
+                <!-- Resizer -->
+                <div id="aspGroupResizer" class="asp-resizer" title="Drag to resize"></div>
+
+                <!-- Right: Shortcut List -->
+                <div style="flex: 1; height: 100%; overflow-y: auto; overflow-x: hidden; border: 1px solid #444; border-radius: 4px; background: rgba(0, 0, 0, 0.1);">
+                    <table class="table" style="color: white; table-layout: fixed; word-wrap: break-word; margin-bottom: 0;">
+                        <thead style="position: sticky; top: 0; background-color: #222; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.5);">
                         <tr>
                             <th style="width: 10%; text-align: center; border-bottom: none;">On</th>
                             <th style="width: 30%; border-bottom: none;">Shortcut</th>
@@ -220,10 +230,46 @@ function setupUI() {
                     </tbody>
                 </table>
             </div>
+
         </div>
     `);
 
     // Event Listeners for UI
+
+    // Resizer Logic
+    let isResizing = false;
+    let lastDownX = 0;
+
+    $("#aspGroupResizer").on("mousedown", function (e) {
+        isResizing = true;
+        lastDownX = e.clientX;
+        $(this).addClass("active");
+        $("body").css({ "cursor": "col-resize", "user-select": "none" });
+        e.preventDefault();
+    });
+
+    $(document).on("mousemove", function (e) {
+        if (!isResizing) return;
+        const offsetRight = e.clientX - lastDownX;
+        const $container = $("#aspGroupTabsContainer");
+        let newWidth = $container.width() + offsetRight;
+
+        if (newWidth < 100) newWidth = 100;
+        if (newWidth > 400) newWidth = 400;
+
+        $container.css("width", newWidth + "px");
+        lastDownX = e.clientX;
+    }).on("mouseup", function (e) {
+        if (isResizing) {
+            isResizing = false;
+            $("#aspGroupResizer").removeClass("active");
+            $("body").css({ "cursor": "", "user-select": "" });
+
+            if (!shortcutData.settings) shortcutData.settings = {};
+            shortcutData.settings.groupWidth = $("#aspGroupTabsContainer").width();
+            saveData();
+        }
+    });
 
     // Master Toggle
     $("#aspToggleEnabled").on("change", function () {
@@ -287,6 +333,20 @@ function setupUI() {
             saveData();
             renderUI();
         });
+    });
+
+    // Add New Group
+    $("#aspBtnNewGroup").on("click", () => {
+        let p = shortcutData.profiles[shortcutData.activeProfile];
+        if (!p) return;
+        let i = 1;
+        while (p.groups[`Group ${i}`]) i++;
+        const newG = `Group ${i}`;
+        p.groups[newG] = { enabled: true, shortcuts: {} };
+        p.activeGroup = newG;
+        saveData();
+        renderTabs();
+        renderShortcutList();
     });
 
     // Add Shortcut
@@ -569,8 +629,9 @@ function renderUI() {
 }
 
 function renderTabs() {
+    // Keep the fixed "Add" button and remove dynamic tabs below it
     const $tabsContainer = $("#aspGroupTabsContainer");
-    $tabsContainer.empty();
+    $tabsContainer.find(".dynamic-tab").remove();
 
     let p = shortcutData.profiles[shortcutData.activeProfile];
     if (!p) return;
@@ -581,7 +642,7 @@ function renderTabs() {
         p.activeGroup = "Group 1";
     }
 
-    // Sort groups
+    // Sort groups: Enabled first, Disabled last
     const groupNames = Object.keys(p.groups).sort((a, b) => {
         const enA = p.groups[a].enabled;
         const enB = p.groups[b].enabled;
@@ -594,28 +655,10 @@ function renderTabs() {
         p.activeGroup = groupNames[0];
     }
 
-    const $addBtn = $("<div>", {
-        class: "asp-tab",
-        style: "display: flex; align-items: center; justify-content: center; width: 32px; padding: 6px; border-radius: 6px 6px 0 0; cursor: pointer; background-color: rgba(255, 255, 255, 0.05); color: #d9d9d9; border: 1px solid #444; border-bottom: none; margin-right: 4px; font-size: 14px;"
-    }).append($("<i>", { class: "fa fa-plus" }))
-        .on("click", () => {
-            let i = 1;
-            while (p.groups[`Group ${i}`]) i++;
-            const newG = `Group ${i}`;
-            p.groups[newG] = { enabled: true, shortcuts: {} };
-            p.activeGroup = newG;
-            saveData();
-            renderTabs();
-            renderShortcutList();
-        });
-
-    $tabsContainer.append($addBtn);
-
     for (const gName of groupNames) {
         const group = p.groups[gName];
         const isActive = (p.activeGroup === gName);
 
-        let tabClass = "asp-tab";
         let color = "#d9d9d9";
         let bgColor = "rgba(255, 255, 255, 0.1)";
         if (isActive && group.enabled) bgColor = "rgba(66, 139, 202, 0.4)";
@@ -625,8 +668,8 @@ function renderTabs() {
         }
 
         let $tab = $("<div>", {
-            class: "asp-tab",
-            style: "display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px 6px 0 0; cursor: pointer; background-color: " + bgColor + "; color: " + color + "; white-space: nowrap; user-select: none; border: 1px solid #444; border-bottom: none; font-size: 14px;"
+            class: "asp-tab dynamic-tab",
+            style: "display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 4px; cursor: pointer; background-color: " + bgColor + "; color: " + color + "; user-select: none; border: 1px solid #444; font-size: 14px; flex-shrink: 0;"
         }).on("click", (e) => {
             // Prevent changing active tab when deleting or toggling
             if ($(e.target).closest('.asp-tab-controls').length === 0) {
@@ -637,23 +680,40 @@ function renderTabs() {
             }
         });
 
+        // Left side wrapper (Checkbox + Label)
+        let $leftSide = $("<div>", { style: "display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; flex: 1;" });
+
         // Checkbox to disable/enable group
         const $check = $("<input>", { type: "checkbox", class: "asp-tab-controls" }).prop("checked", group.enabled)
-            .css({ cursor: "pointer", margin: 0 })
+            .css({ cursor: "pointer", margin: 0, flexShrink: 0 })
             .on("change", function (e) {
                 group.enabled = $(this).prop("checked");
                 saveData();
                 renderTabs();
-                renderShortcutList();
+                renderShortcutList(); // Because overall shortcuts change
             });
 
-        const $label = $("<span>", { text: gName }).css({ marginTop: "1px" }).on("dblclick", function (e) {
+        // Name Label (double click to edit) with ellipsis truncation
+        const $label = $("<span>", {
+            text: gName,
+            title: gName // Hover to see full name
+        }).css({
+            marginTop: "1px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap"
+        }).on("dblclick", function (e) {
             e.stopPropagation();
             triggerGroupRename();
         });
 
+        $leftSide.append($check).append($label);
+
+        // Right side wrapper (Edit and Delete)
+        let $rightSide = $("<div>", { style: "display: flex; align-items: center; gap: 4px; flex-shrink: 0;" });
+
         // Edit button
-        const $edit = $("<i>", { class: "fa fa-pencil asp-tab-controls" }).css({ fontSize: "12px", cursor: "pointer", opacity: 0.7, paddingLeft: "4px" })
+        const $edit = $("<i>", { class: "fa fa-pencil asp-tab-controls", title: "Rename" }).css({ fontSize: "12px", cursor: "pointer", opacity: 0.7 })
             .hover(function () { $(this).css('color', '#428bca'); }, function () { $(this).css('color', color); })
             .on("click", (e) => {
                 e.stopPropagation();
@@ -680,7 +740,7 @@ function renderTabs() {
         }
 
         // Delete button
-        const $del = $("<i>", { class: "fa fa-times asp-tab-controls" }).css({ fontSize: "12px", cursor: "pointer", opacity: 0.7, paddingLeft: "4px" })
+        const $del = $("<i>", { class: "fa fa-times asp-tab-controls", title: "Delete" }).css({ fontSize: "12px", cursor: "pointer", opacity: 0.7 })
             .hover(function () { $(this).css('color', '#ff4444'); }, function () { $(this).css('color', color); })
             .on("click", (e) => {
                 e.stopPropagation();
@@ -702,7 +762,8 @@ function renderTabs() {
                 });
             });
 
-        $tab.append($check).append($label).append($edit).append($del);
+        $rightSide.append($edit).append($del);
+        $tab.append($leftSide).append($rightSide);
         $tabsContainer.append($tab);
     }
 }
@@ -771,10 +832,23 @@ style.innerHTML = `
         min-height: 33px;
     }
     #aspGroupTabsContainer::-webkit-scrollbar {
+        width: 6px;
         height: 6px;
     }
     #aspGroupTabsContainer::-webkit-scrollbar-thumb {
         background-color: #555;
         border-radius: 4px;
+    }
+    .asp-resizer {
+        width: 6px;
+        background-color: transparent;
+        cursor: col-resize;
+        border-radius: 3px;
+        height: 100%;
+        transition: background-color 0.2s;
+        flex-shrink: 0;
+    }
+    .asp-resizer:hover, .asp-resizer.active {
+        background-color: #555;
     }`;
 document.head.appendChild(style);
