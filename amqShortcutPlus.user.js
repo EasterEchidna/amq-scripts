@@ -113,6 +113,7 @@ $("#qpAnswerInput").keypress((event) => {
 
 // UI Setup
 let shortcutWindow;
+let awesomplete;
 
 const loadInterval = setInterval(() => {
     if (document.querySelector("#loadingScreen.hidden")) {
