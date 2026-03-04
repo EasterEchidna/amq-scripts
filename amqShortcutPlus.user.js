@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Shortcut+
 // @namespace    https://github.com/EasterEchidna
-// @version      1.2.0
+// @version      1.2.1
 // @description  Allows you to type shortcuts for anime titles in the answer box.
 // @author       EasterEchidna
 // @match        https://animemusicquiz.com/*
@@ -433,7 +433,7 @@ function setupUI() {
                             <h4 class="modal-title" id="aspConfirmTitle">Confirm</h4>
                         </div>
                         <div class="modal-body">
-                            <p id="aspConfirmMessage"></p>
+                            <p id="aspConfirmMessage" style="white-space: pre-wrap; font-family: monospace;"></p>
                         </div>
                         <div class="modal-footer" style="border-top: 1px solid #333;">
                             <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -572,27 +572,57 @@ function setupUI() {
                 }
 
                 if (isBackup) {
+                    let newProfiles = [];
+                    let existingProfiles = [];
+
                     for (const pName in parsed) {
                         if (parsed.hasOwnProperty(pName)) {
-                            let incoming = parsed[pName];
-                            if (!incoming.groups && !incoming.activeGroup) {
-                                let legacyShortcuts = {};
-                                for (const skey in incoming) {
-                                    if (typeof incoming[skey] === "string") {
-                                        legacyShortcuts[skey] = { answer: incoming[skey], enabled: true };
-                                    }
-                                }
-                                incoming = {
-                                    activeGroup: 'Group 1',
-                                    groups: { 'Group 1': { enabled: true, shortcuts: legacyShortcuts } }
-                                };
+                            if (shortcutData.profiles[pName]) {
+                                existingProfiles.push(pName);
+                            } else {
+                                newProfiles.push(pName);
                             }
-                            shortcutData.profiles[pName] = incoming;
                         }
                     }
-                    saveData();
-                    renderUI();
-                    aspShowAlert("All Profiles merged/imported successfully!");
+
+                    if (newProfiles.length === 0 && existingProfiles.length === 0) {
+                        aspShowAlert("The imported file does not contain any profiles.");
+                        return;
+                    }
+
+                    let confirmMsg = "You are about to import multiple profiles.\n\n";
+                    if (newProfiles.length > 0) {
+                        confirmMsg += "Adding (New):\n" + newProfiles.map(n => " - " + n).join("\n") + "\n\n";
+                    }
+                    if (existingProfiles.length > 0) {
+                        confirmMsg += "Overwriting (Existing):\n" + existingProfiles.map(n => " - " + n).join("\n") + "\n";
+                    }
+                    confirmMsg += "\nProceed with import?";
+
+                    aspShowConfirm("Import All Profiles", confirmMsg, () => {
+                        for (const pName in parsed) {
+                            if (parsed.hasOwnProperty(pName)) {
+                                let incoming = parsed[pName];
+                                if (!incoming.groups && !incoming.activeGroup) {
+                                    let legacyShortcuts = {};
+                                    for (const skey in incoming) {
+                                        if (typeof incoming[skey] === "string") {
+                                            legacyShortcuts[skey] = { answer: incoming[skey], enabled: true };
+                                        }
+                                    }
+                                    incoming = {
+                                        activeGroup: 'Group 1',
+                                        groups: { 'Group 1': { enabled: true, shortcuts: legacyShortcuts } }
+                                    };
+                                }
+                                shortcutData.profiles[pName] = incoming;
+                            }
+                        }
+                        saveData();
+                        renderUI();
+                        aspShowAlert("All Profiles imported successfully!");
+                    });
+
                 } else {
                     currentImportData = parsed;
                     aspShowPrompt("Name Imported Profile", "This file contains a single profile. What name would you like to give it?", "", (newName) => {
