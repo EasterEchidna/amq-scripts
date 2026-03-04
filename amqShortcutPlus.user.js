@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Shortcut+
 // @namespace    https://github.com/EasterEchidna
-// @version      1.2.3
+// @version      1.2.4
 // @description  Allows you to type shortcuts for anime titles in the answer box.
 // @author       EasterEchidna
 // @match        https://animemusicquiz.com/*
@@ -395,7 +395,8 @@ function setupUI() {
         }
     })
     document.querySelector("#aspNewValue").addEventListener("keydown", e => {
-        if (e.key === 'Enter') {
+        let isAwesompleteOpen = document.querySelector(".aweblock ul").getAttribute("hidden") === null
+        if (e.key === 'Enter' && !isAwesompleteOpen) {
             document.querySelector("#aspBtnAdd").click()
         }
         if (e.key === 'Tab') {
