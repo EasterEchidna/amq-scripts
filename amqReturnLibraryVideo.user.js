@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Return Library Video
 // @namespace    https://github.com/EasterEchidna
-// @version      1.0.0
+// @version      1.0.1
 // @description  Removed sample limits and brought back video. Two modes: Audio and Video. Worked in both Quiz Builder and Song Library.
 // @author       EasterEchidna
 // @match        https://animemusicquiz.com/*
@@ -25,6 +25,7 @@ function setupMediaUnlock() {
     // Remove limits
     PreviewVideoPlayer.prototype.PLAY_LENGTH = 999999;
     PreviewVideoPlayer.prototype.SAMPLE_TARGET_POINT = 0;
+
     if (!document.getElementById('amqRlvStyles')) {
         let style = document.createElement('style');
         style.id = 'amqRlvStyles';
@@ -96,6 +97,7 @@ function setupMediaUnlock() {
             }, 10);
         }
     });
+
     function updateLoop() {
         // Update tooltip
         if (isHoveringBar && window.amqRlvCurrentPlayer && window.amqRlvCurrentPlayer.player && knobElement) {
@@ -121,9 +123,16 @@ function setupMediaUnlock() {
                 window.amqRlvCurrentController.style.setProperty('width', rect.width + 'px', 'important');
                 window.amqRlvCurrentController.style.setProperty('left', rect.left + 'px', 'important');
             } else {
+                // Parent closed
+                window.amqRlvIsClosed = true;
+                window.amqRlvCurrentFallbackList = []; // Stop fallbacks
+                
                 try {
                     if (window.amqRlvCurrentPlayer && window.amqRlvCurrentPlayer.pauseVideo) {
                         window.amqRlvCurrentPlayer.pauseVideo();
+                        if (window.amqRlvCurrentPlayer.player) {
+                            window.amqRlvCurrentPlayer.player.src(''); // Kill load
+                        }
                     }
                 } catch (e) { }
 
@@ -176,6 +185,7 @@ function setupMediaUnlock() {
         LibraryPreviewPlayerController.prototype.playSong = function (fileName, meanVolume, playChangeCallback) {
 
             window.amqRlvCurrentPlayer = this.videoPlayer;
+            window.amqRlvIsClosed = false; // Reset close flag
             let currentMediaMode = localStorage.getItem('amqReturnLibraryVideoMode') || 'video';
 
             let targetFile = fileName;
@@ -198,12 +208,13 @@ function setupMediaUnlock() {
             args[0] = targetFile;
             let result = originalPlaySong.apply(this, args);
 
-            // Error catcher
+            // Error & Ghost Audio catcher
             if (this.videoPlayer && this.videoPlayer.player) {
                 let player = this.videoPlayer.player;
                 player.off('error');
+                player.off('playing'); // Clear old listeners
 
-                let currentErrorIndex = 0;
+                // Handle dead links
                 player.on('error', () => {
                     let err = player.error();
                     if (err && window.amqRlvCurrentFallbackList && currentErrorIndex < window.amqRlvCurrentFallbackList.length - 1) {
@@ -212,6 +223,14 @@ function setupMediaUnlock() {
                         player.error(null);
                         player.src(nextFile);
                         player.play();
+                    }
+                });
+                
+                // Prevent ghost audio on late buffer
+                player.on('playing', () => {
+                    if (window.amqRlvIsClosed) {
+                        player.pause();
+                        player.src(''); 
                     }
                 });
             }
@@ -285,7 +304,17 @@ function setupMediaUnlock() {
                     closeBtn.addEventListener('mouseleave', () => closeBtn.style.color = 'rgba(255,255,255,0.7)');
                     closeBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        if (this.videoPlayer) this.videoPlayer.pauseVideo();
+                        // Close clicked
+                        window.amqRlvIsClosed = true;
+                        window.amqRlvCurrentFallbackList = []; // Stop fallbacks
+                        
+                        if (this.videoPlayer) {
+                            this.videoPlayer.pauseVideo();
+                            if (this.videoPlayer.player) {
+                                this.videoPlayer.player.src(''); // Kill load
+                            }
+                        }
+                        
                         controllerEl.style.setProperty('transition', 'none', 'important');
                         controllerEl.style.setProperty('transform', 'translateY(115%)', 'important');
                         controllerEl.classList.remove('open', 'amq-rlv-active');
