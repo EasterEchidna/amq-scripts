@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Shortcut+
 // @namespace    https://github.com/EasterEchidna
-// @version      1.2.1
+// @version      1.2.2
 // @description  Allows you to type shortcuts for anime titles in the answer box.
 // @author       EasterEchidna
 // @match        https://animemusicquiz.com/*
@@ -129,14 +129,14 @@ function setupUI() {
     // Add to Settings Menu
     $("#optionsContainer > ul").prepend(
         $(`<li class="clickAble" data-toggle="modal" data-target="#shortcutSettingsModal">Shortcut+</li>`)
-            .on("click", () => {
-                if (shortcutWindow.isVisible()) {
-                    shortcutWindow.close();
-                } else {
-                    shortcutWindow.open();
-                    renderUI(); // Refresh UI when opening
-                }
-            })
+        .on("click", () => {
+            if (shortcutWindow.isVisible()) {
+                shortcutWindow.close();
+            } else {
+                shortcutWindow.open();
+                renderUI(); // Refresh UI when opening
+            }
+        })
     );
 
     localStorage.removeItem("setupWindow_amqShortcutWindow");
@@ -164,9 +164,9 @@ function setupUI() {
     // Header Controls
     shortcutWindow.window.find(".modal-header").empty()
         .append($("<i>", { class: "fa fa-times clickAble", "aria-hidden": "true", style: "font-size: 25px; top: 8px; right: 15px; position: absolute;" })
-            .on("click", () => {
-                shortcutWindow.close();
-            }))
+                .on("click", () => {
+        shortcutWindow.close();
+    }))
         .append(`<h2>AMQ Shortcut+</h2>`);
 
 
@@ -178,7 +178,7 @@ function setupUI() {
                 <label style="margin: 0; cursor: pointer;">
                     <input type="checkbox" id="aspToggleEnabled" ${shortcutData.enabled ? "checked" : ""}> Enable Shortcuts
                 </label>
-                
+
                 <div style="display: flex; gap: 5px; align-items: center;">
                     <span>Profile:</span>
                     <select id="aspProfileSelect" class="form-control" style="width: auto; height: 30px; padding: 0 5px; background-color: #2b2b2b; color: #d9d9d9; border: 1px solid #444; border-radius: 4px;"></select>
@@ -201,13 +201,13 @@ function setupUI() {
             <!-- Add new shortcut row -->
             <div style="display: flex; gap: 5px; margin-bottom: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
                 <input type="text" id="aspNewKey" class="form-control" placeholder="Shortcut" style="flex: 1; background-color: #2b2b2b; color: white; border: 1px solid #444;">
-                <div class="aweblock" style="flex: 2;"><input type="text" id="aspNewValue" list="aspNewValueList" class="form-control" placeholder="Answer" style="background-color: #2b2b2b; color: white; border: 1px solid #444;"></div>
+                <div class="aweblock" style="flex: 2;"><input type="text" id="aspNewValue" class="form-control" placeholder="Answer" style="background-color: #2b2b2b; color: white; border: 1px solid #444;"></div>
                 <button id="aspBtnAdd" class="btn btn-success btn-sm">Add</button>
             </div>
 
             <!-- 2-Column Split: Groups on Left, Shortcuts on Right -->
             <div style="display: flex; gap: 4px; align-items: flex-start; margin-bottom: 10px; height: 400px;">
-                
+
                 <!-- Left: Profile Groups Tabs Stack -->
                 <div id="aspGroupTabsContainer" style="display: flex; flex-direction: column; gap: 4px; width: ${shortcutData.settings?.groupWidth || 140}px; min-width: 100px; max-width: 400px; overflow-y: auto; overflow-x: hidden; max-height: 100%;">
                     <!-- Fixed Add Group Button -->
@@ -386,11 +386,22 @@ function setupUI() {
     });
 
     // Handle Enter key in add form
-    $("#aspNewKey, #aspNewValue").on("keypress", function (e) {
-        if (e.which === 13) {
+    document.querySelector("#aspNewKey").addEventListener("keydown", e => {
+        if (e.key = 'Enter') {
             $("#aspBtnAdd").click();
         }
-    });
+        if (e.key === 'Tab') {
+            document.querySelector("#aspNewValue").focus()
+        }
+    })
+    document.querySelector("#aspNewValue").addEventListener("keydown", e => {
+        if (e.key = 'Enter') {
+            document.querySelector("#aspBtnAdd").click()
+        }
+        if (e.key === 'Tab') {
+            document.querySelector("#aspBtnAdd").focus()
+        }
+    })
 
     // Import Button Proxy
     $("#aspBtnImport").on("click", () => {
@@ -442,7 +453,7 @@ function setupUI() {
                     </div>
                 </div>
             </div>
-            
+
             <div class="modal fade" id="aspPromptModal" tabindex="-1" role="dialog" style="z-index: 1060;">
                 <div class="modal-dialog" role="document" style="width: 400px; margin-top: 15vh;">
                     <div class="modal-content" style="background-color: #1b1b1b; color: #d9d9d9; border: 1px solid #444; border-radius: 6px;">
@@ -720,13 +731,13 @@ function renderTabs() {
 
         // Checkbox to disable/enable group
         const $check = $("<input>", { type: "checkbox", class: "asp-tab-controls" }).prop("checked", group.enabled)
-            .css({ cursor: "pointer", margin: 0, flexShrink: 0 })
-            .on("change", function (e) {
-                group.enabled = $(this).prop("checked");
-                saveData();
-                renderTabs();
-                renderShortcutList(); // Because overall shortcuts change
-            });
+        .css({ cursor: "pointer", margin: 0, flexShrink: 0 })
+        .on("change", function (e) {
+            group.enabled = $(this).prop("checked");
+            saveData();
+            renderTabs();
+            renderShortcutList(); // Because overall shortcuts change
+        });
 
         // Name Label (double click to edit) with ellipsis truncation
         const $label = $("<span>", {
@@ -749,11 +760,11 @@ function renderTabs() {
 
         // Edit button
         const $edit = $("<i>", { class: "fa fa-pencil asp-tab-controls", title: "Rename" }).css({ fontSize: "12px", cursor: "pointer", opacity: 0.7 })
-            .hover(function () { $(this).css('color', '#428bca'); }, function () { $(this).css('color', color); })
-            .on("click", (e) => {
-                e.stopPropagation();
-                triggerGroupRename();
-            });
+        .hover(function () { $(this).css('color', '#428bca'); }, function () { $(this).css('color', color); })
+        .on("click", (e) => {
+            e.stopPropagation();
+            triggerGroupRename();
+        });
 
         function triggerGroupRename() {
             aspShowPrompt("Rename group:", "", gName, (newName) => {
@@ -776,26 +787,26 @@ function renderTabs() {
 
         // Delete button
         const $del = $("<i>", { class: "fa fa-times asp-tab-controls", title: "Delete" }).css({ fontSize: "12px", cursor: "pointer", opacity: 0.7 })
-            .hover(function () { $(this).css('color', '#ff4444'); }, function () { $(this).css('color', color); })
-            .on("click", (e) => {
-                e.stopPropagation();
-                if (Object.keys(p.groups).length <= 1) {
-                    aspShowConfirm("Clear Group", "Are you sure you want to clear this group?", () => {
-                        p.groups[gName].shortcuts = {};
-                        saveData();
-                        renderShortcutList();
-                    });
-                    return;
-                }
-
-                aspShowConfirm("Delete Group", `Delete group '${gName}'?`, () => {
-                    delete p.groups[gName];
-                    if (p.activeGroup === gName) p.activeGroup = Object.keys(p.groups)[0];
+        .hover(function () { $(this).css('color', '#ff4444'); }, function () { $(this).css('color', color); })
+        .on("click", (e) => {
+            e.stopPropagation();
+            if (Object.keys(p.groups).length <= 1) {
+                aspShowConfirm("Clear Group", "Are you sure you want to clear this group?", () => {
+                    p.groups[gName].shortcuts = {};
                     saveData();
-                    renderTabs();
                     renderShortcutList();
                 });
+                return;
+            }
+
+            aspShowConfirm("Delete Group", `Delete group '${gName}'?`, () => {
+                delete p.groups[gName];
+                if (p.activeGroup === gName) p.activeGroup = Object.keys(p.groups)[0];
+                saveData();
+                renderTabs();
+                renderShortcutList();
             });
+        });
 
         $rightSide.append($edit).append($del);
         $tab.append($leftSide).append($rightSide);
@@ -825,25 +836,25 @@ function renderShortcutList() {
         let opacity = data.enabled ? 1.0 : 0.4;
 
         const $tr = $("<tr>").css("opacity", opacity)
-            .append($("<td>", { style: "text-align: center;" }).append(
-                $("<input>", { type: "checkbox" }).prop("checked", data.enabled).on("change", function () {
-                    data.enabled = $(this).prop("checked");
-                    saveData();
-                    renderShortcutList();
-                })
-            ))
-            .append($("<td>", { text: key }))
-            .append($("<td>", { text: data.answer }))
-            .append($("<td>", { style: "text-align: center;" })
+        .append($("<td>", { style: "text-align: center;" }).append(
+            $("<input>", { type: "checkbox" }).prop("checked", data.enabled).on("change", function () {
+                data.enabled = $(this).prop("checked");
+                saveData();
+                renderShortcutList();
+            })
+        ))
+        .append($("<td>", { text: key }))
+        .append($("<td>", { text: data.answer }))
+        .append($("<td>", { style: "text-align: center;" })
                 .append($("<button>", { class: "btn btn-danger btn-xs", title: "Delete Shortcut" })
-                    .append($("<i>", { class: "fa fa-remove" }))
-                    .on("click", () => {
-                        delete activeGroupShortcuts[key];
-                        saveData();
-                        renderShortcutList();
-                    })
-                )
-            );
+                        .append($("<i>", { class: "fa fa-remove" }))
+                        .on("click", () => {
+            delete activeGroupShortcuts[key];
+            saveData();
+            renderShortcutList();
+        })
+                       )
+               );
 
         $list.append($tr);
     }
