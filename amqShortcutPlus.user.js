@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Shortcut+
 // @namespace    https://github.com/EasterEchidna
-// @version      1.2.2
+// @version      1.2.3
 // @description  Allows you to type shortcuts for anime titles in the answer box.
 // @author       EasterEchidna
 // @match        https://animemusicquiz.com/*
