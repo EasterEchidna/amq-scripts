@@ -387,7 +387,7 @@ function setupUI() {
 
     // Handle Enter key in add form
     document.querySelector("#aspNewKey").addEventListener("keydown", e => {
-        if (e.key = 'Enter') {
+        if (e.key === 'Enter') {
             $("#aspBtnAdd").click();
         }
         if (e.key === 'Tab') {
@@ -395,7 +395,7 @@ function setupUI() {
         }
     })
     document.querySelector("#aspNewValue").addEventListener("keydown", e => {
-        if (e.key = 'Enter') {
+        if (e.key === 'Enter') {
             document.querySelector("#aspBtnAdd").click()
         }
         if (e.key === 'Tab') {
