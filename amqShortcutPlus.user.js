@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Shortcut+
 // @namespace    https://github.com/EasterEchidna
-// @version      1.1.0
+// @version      1.2.0
 // @description  Allows you to type shortcuts for anime titles in the answer box.
 // @author       EasterEchidna
 // @match        https://animemusicquiz.com/*
@@ -118,6 +118,9 @@ const loadInterval = setInterval(() => {
     if (document.querySelector("#loadingScreen.hidden")) {
         clearInterval(loadInterval);
         setupUI();
+
+        awesomplete = new AutoCompleteController($("#aspNewValue"));
+        ["Rejoining Player","Join Game", "Spectate Game", "get all song names"].forEach(l => new Listener(l, () => awesomplete.updateList()).bindListener())
     }
 }, 500);
 
@@ -167,6 +170,7 @@ function setupUI() {
 
 
     shortcutWindow.panels[0].panel.append(`
+        <style>.aweblock > .awesomplete {display:block !important;}</style>
         <div id="aspContainer" style="padding: 10px;">
             <!-- Header row: Master Toggle and Profile Management -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #444;">
@@ -196,7 +200,7 @@ function setupUI() {
             <!-- Add new shortcut row -->
             <div style="display: flex; gap: 5px; margin-bottom: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px;">
                 <input type="text" id="aspNewKey" class="form-control" placeholder="Shortcut" style="flex: 1; background-color: #2b2b2b; color: white; border: 1px solid #444;">
-                <input type="text" id="aspNewValue" class="form-control" placeholder="Answer" style="flex: 2; background-color: #2b2b2b; color: white; border: 1px solid #444;">
+                <div class="aweblock" style="flex: 2;"><input type="text" id="aspNewValue" list="aspNewValueList" class="form-control" placeholder="Answer" style="background-color: #2b2b2b; color: white; border: 1px solid #444;"></div>
                 <button id="aspBtnAdd" class="btn btn-success btn-sm">Add</button>
             </div>
 
