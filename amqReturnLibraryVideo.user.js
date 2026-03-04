@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AMQ Return Library Video
 // @namespace    https://github.com/EasterEchidna
-// @version      1.0.1
+// @version      1.0.2
 // @description  Removed sample limits and brought back video. Two modes: Audio and Video. Worked in both Quiz Builder and Song Library.
 // @author       EasterEchidna
 // @match        https://animemusicquiz.com/*
@@ -33,7 +33,7 @@ function setupMediaUnlock() {
             .amq-rlv-active {
                 position: fixed !important; bottom: 45px !important;
                 transform: none !important; right: auto !important;
-                display: flex !important; flex-wrap: wrap !important; z-index: 9999 !important;
+                display: flex !important; flex-wrap: wrap !important; !important;
                 border-radius: 10px 10px 0 0 !important; padding: 12px 15px !important; box-sizing: border-box !important;
                 transition: none !important; box-shadow: none !important;
             }
@@ -54,7 +54,7 @@ function setupMediaUnlock() {
             }
             #amqRlvTimeTooltip {
                 position: fixed; background: rgba(0,0,0,0.85); color: #fff; font-size: 11px; padding: 4px 8px;
-                border-radius: 4px; pointer-events: none; opacity: 0; z-index: 2147483647;
+                border-radius: 4px; pointer-events: none; opacity: 0;
                 transform: translateX(-50%); white-space: nowrap; transition: opacity 0.1s;
             }
         `;
@@ -261,7 +261,7 @@ function setupMediaUnlock() {
                     gearIcon.addEventListener('mouseleave', () => gearIcon.style.color = 'rgba(255,255,255,0.7)');
 
                     let dropdownWrapper = document.createElement('div');
-                    dropdownWrapper.style.cssText = `position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 8px; min-width: 90px; opacity: 0; pointer-events: none; transition: opacity 0.15s; z-index: 10000;`;
+                    dropdownWrapper.style.cssText = `position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 8px; min-width: 90px; opacity: 0; pointer-events: none; transition: opacity 0.15s;`;
 
                     let dropdownInner = document.createElement('div');
                     dropdownInner.style.cssText = `background: rgba(30,30,30,0.95); border-radius: 6px; padding: 4px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.5);`;
